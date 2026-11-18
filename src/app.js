@@ -222,7 +222,11 @@
       rechnung, ohneUnterschrift: liste.filter((e) => !e.unterschrift && !e.papier).length };
   }
   function rechnungAnlegen(k, monat, a) {
-    const jahr = monat.slice(0, 4), nr = jahr + '-' + pad(D.rechnungen.filter((r) => r.nr.startsWith(jahr)).length + 1).padStart(3, '0');
+    const jahr = monat.slice(0, 4);
+    D.letzteNr = D.letzteNr || {};
+    const hoechste = Math.max(D.letzteNr[jahr] || 0, ...D.rechnungen.filter((r) => r.nr.startsWith(jahr + '-')).map((r) => Number(r.nr.slice(5)) || 0));
+    D.letzteNr[jahr] = hoechste + 1;
+    const nr = jahr + '-' + String(hoechste + 1).padStart(3, '0');
     const umw = Math.min(a.topf.umwandlung, a.summe);
     D.rechnungen.push({ id: id('r'), nr, kunde: k.id, monat, datum: heute(), einsaetze: a.liste.map((e) => e.id), summe: a.summe, kasse: Math.min(a.summe, a.deckung), umwandlung: umw, selbst: Math.max(0, a.summe - a.deckung) });
   }
@@ -384,9 +388,9 @@
       <div class="zwei-spalten">
         <div class="blatt blatt-innen"><h3>Kontakt</h3><p style="margin-top:8px">${esc(k.strasse)}<br>${esc(k.ort)}</p>
           ${k.telefon ? `<p><a href="tel:${esc(k.telefon.replace(/\s/g, ''))}">${esc(k.telefon)}</a></p>` : ''}${k.angehoerige ? `<p class="klein">Angehörige: ${esc(k.angehoerige)}</p>` : ''}</div>
-        <div class="blatt blatt-innen"><h3>Pflegekasse</h3><dl class="nachweis-karte" style="margin-top:8px"><dl>
+        <div class="blatt blatt-innen"><h3>Pflegekasse</h3><div class="nachweis-karte" style="margin-top:8px"><dl>
           <dt>Kasse</dt><dd>${esc(k.kasse)}</dd><dt>Versicherten-Nr.</dt><dd>${esc(k.versnr || '–')}</dd>
-          <dt>Abtretung</dt><dd>${k.abtretung ? 'liegt vor seit ' + esc(datumZahl(k.abtretung)) : '<span style="color:var(--rot)">fehlt</span>'}</dd></dl></dl></div>
+          <dt>Abtretung</dt><dd>${k.abtretung ? 'liegt vor seit ' + esc(datumZahl(k.abtretung)) : '<span style="color:var(--rot)">fehlt</span>'}</dd></dl></div></div>
       </div>
       <div class="blatt blatt-innen" style="margin-top:12px"><h3>Budget im ${esc(monatName(m))}</h3>
         <p class="klein" style="margin:6px 0 0">Von der Pflegekasse verfügbar: <strong>${euro(a.deckung)}</strong> (Entlastungsbetrag ${euro(a.topf.verfuegbar)}${a.topf.umwandlung ? `, Umwandlung ${euro(a.topf.umwandlung)}` : ''}).
@@ -464,7 +468,7 @@
       ${a.ohneUnterschrift && !r ? `<div class="hinweis h-fehler">${icon('warnung')}<span><strong>${a.ohneUnterschrift} ${a.ohneUnterschrift === 1 ? 'Einsatz' : 'Einsätze'} ohne Unterschrift</strong>Erst nachholen oder Papier-Nachweis vermerken, dann abrechnen.</span></div>` : ''}
       ${!k.abtretung ? `<div class="hinweis h-fehler">${icon('warnung')}<span><strong>Abtretungserklärung fehlt</strong>Ohne sie zahlt die Pflegekasse nicht direkt an dich. Dann bekommt die Kundin oder der Kunde die Rechnung und reicht sie selbst ein.</span></div>` : ''}
       <div class="knopfreihe" style="margin-bottom:14px"><button class="knopf knopf-zweit" data-a="drucken">${icon('drucken')}Drucken oder als PDF</button>
-      ${r ? `<button class="knopf knopf-still" data-a="rechnung-zurueck" data-id="${esc(r.id)}">Abrechnung zurücknehmen</button>`
+      ${r ? `<button class="knopf knopf-still" data-a="rechnung-zurueck" data-id="${esc(r.id)}">Wieder auf „offen“ setzen</button>`
         : `<button class="knopf" data-a="rechnung-anlegen" data-kunde="${esc(k.id)}" data-monat="${m}"${!a.liste.length || a.ohneUnterschrift ? ' disabled' : ''}>${icon('haken')}Als abgerechnet markieren</button>`}</div></div>
       <article class="dokument">
         <div class="dok-kopf"><div><span class="marke-name">${esc(f.name)} ${esc(f.zusatz)}</span><br>${esc(f.inhaber)}<br>${esc(f.anschrift)}<br>${esc(f.telefon)} · ${esc(f.email)}</div>
@@ -770,6 +774,24 @@
     dialogOeffnen('Ansicht', inhalt, `<button class="knopf" type="submit">Fertig</button>`, 'rolle');
   }
 
+  /* ===== Rückfragen (eigener Dialog statt confirm/prompt: sieht gleich aus und klappt auch in eingebetteten Seiten) ===== */
+  const frageDlg = $('#frage');
+  function fragen({ titel, text = '', ja = 'OK', gefahr = false, eingabe = null }) {
+    return new Promise((fertig) => {
+      frageDlg.innerHTML = `<form novalidate><div class="dialog-kopf"><h2 id="frage-titel">${esc(titel)}</h2></div>
+        <div class="dialog-inhalt">${text ? `<p>${esc(text)}</p>` : ''}${eingabe ? `<label class="feld"><span>${esc(eingabe.label)}</span><input name="antwort" value="${esc(eingabe.wert || '')}" maxlength="200" autocomplete="off"></label>` : ''}</div>
+        <div class="dialog-fuss"><button class="knopf knopf-zweit" type="button" data-frage="nein">Abbrechen</button><button class="knopf${gefahr ? ' knopf-gefahr' : ''}" type="submit">${esc(ja)}</button></div></form>`;
+      let antwort = null;
+      const zu = () => { frageDlg.removeEventListener('close', zu); fertig(antwort); };
+      frageDlg.addEventListener('close', zu);
+      frageDlg.querySelector('form').addEventListener('submit', (ev) => { ev.preventDefault(); ev.stopPropagation(); const i = frageDlg.querySelector('input'); antwort = i ? i.value.trim() : true; frageDlg.close(); });
+      frageDlg.querySelector('[data-frage="nein"]').addEventListener('click', () => frageDlg.close());
+      if (typeof frageDlg.showModal === 'function') frageDlg.showModal(); else frageDlg.setAttribute('open', '');
+      const i = frageDlg.querySelector('input'); if (i) { i.focus(); i.select(); }
+    });
+  }
+  frageDlg.addEventListener('click', (ev) => { if (ev.target === frageDlg) frageDlg.close(); });
+
   /* ===== Aktionen ===== */
   let toastZeit;
   function meldung(text) { const t = $('#toast'); t.textContent = text; t.classList.add('zeigen'); clearTimeout(toastZeit); toastZeit = setTimeout(() => t.classList.remove('zeigen'), Math.min(9000, 3500 + text.length * 45)); }
@@ -791,20 +813,26 @@
     'rolle-menue': () => rolleDialog(),
     'einsatz-neu': (el) => einsatzDialog(null, { datum: el.dataset.datum, kunde: el.dataset.kunde }),
     'einsatz-bearbeiten': (el) => einsatzDialog(einsatz(el.dataset.id)),
-    'einsatz-absagen': (el) => { const e = einsatz(el.dataset.id); if (!e || !confirm('Diesen Einsatz absagen?')) return; e.status = 'abgesagt'; e.grund = 'vom Büro abgesagt'; speichern(); dialogZu(); zeigen(); meldung('Einsatz abgesagt.'); },
+    'einsatz-absagen': async (el) => { const e = einsatz(el.dataset.id); if (!e) return;
+      const grund = await fragen({ titel: 'Einsatz absagen?', text: `${kundenName(kunde(e.kunde))}, ${datumKurz(e.datum)}, ${e.von} Uhr`, ja: 'Absagen', gefahr: true, eingabe: { label: 'Grund (für die Übersicht)', wert: '' } });
+      if (grund == null) return; e.status = 'abgesagt'; e.grund = grund || 'vom Büro abgesagt'; speichern(); dialogZu(); zeigen(); meldung('Einsatz abgesagt.'); },
     'kunde-neu': () => kundeDialog(null),
     'kunde-bearbeiten': (el) => kundeDialog(kunde(el.dataset.id)),
     'person-neu': () => personDialog(null),
     'person-bearbeiten': (el) => personDialog(person(el.dataset.id)),
     'angekommen': (el) => { const e = einsatz(el.dataset.id); e.status = 'laeuft'; e.ist = { von: jetztZeit(), bis: '' }; speichern(); zeigen(); meldung(`Beginn ${e.ist.von} erfasst. Gute Zeit!`); },
     'fertig': (el) => { const e = einsatz(el.dataset.id); e.ist.bis = jetztZeit(); if (minuten(e.ist.bis) <= minuten(e.ist.von)) e.ist.bis = uhrzeit(minuten(e.ist.von) + 5); e.status = 'erledigt'; speichern(); location.hash = '#unterschrift/' + e.id; },
-    'absagen': (el) => { const e = einsatz(el.dataset.id); const grund = prompt('Warum kann der Einsatz nicht stattfinden? (Das Büro bekommt Bescheid.)', 'Niemand öffnet'); if (grund == null) return; e.status = 'abgesagt'; e.grund = grund.slice(0, 200); speichern(); zeigen(); meldung('Abgesagt. Das Büro sieht es sofort.'); },
+    'absagen': async (el) => { const e = einsatz(el.dataset.id);
+      const grund = await fragen({ titel: 'Kann nicht stattfinden?', text: 'Das Büro sieht es sofort.', ja: 'Absagen', gefahr: true, eingabe: { label: 'Warum?', wert: 'Niemand öffnet' } });
+      if (grund == null) return; e.status = 'abgesagt'; e.grund = (grund || 'ohne Angabe').slice(0, 200); speichern(); zeigen(); meldung('Abgesagt. Das Büro sieht es sofort.'); },
     'papier': (el) => { const e = einsatz(el.dataset.id); e.papier = true; speichern(); zeigen(); meldung('Vermerkt: Unterschrift liegt auf Papier vor.'); },
     'u-leeren': () => unterschriftStarten.leeren && unterschriftStarten.leeren(),
     'u-fertig': (el) => { const e = einsatz(el.dataset.id); const name = ($('#u-name').value || '').trim(); if (!name) { meldung('Bitte den Namen eintragen.'); return; }
       e.unterschrift = { pfad: pfadAus(striche), name: name.slice(0, 80), zeit: heute() + 'T' + jetztZeit() }; speichern(); location.hash = '#einsatz/' + e.id; meldung('Unterschrieben. Danke!'); },
     'rechnung-anlegen': (el) => { const k = kunde(el.dataset.kunde), m = el.dataset.monat, a = abrechnung(k, m); if (!a.liste.length || a.ohneUnterschrift) return; rechnungAnlegen(k, m, a); speichern(); zeigen(); meldung('Als abgerechnet markiert. Jetzt drucken oder als PDF an die Pflegekasse schicken.'); },
-    'rechnung-zurueck': (el) => { if (!confirm('Abrechnung zurücknehmen? Die Rechnungsnummer wird frei.')) return; D.rechnungen = D.rechnungen.filter((r) => r.id !== el.dataset.id); speichern(); zeigen(); },
+    'rechnung-zurueck': async (el) => {
+      if (!await fragen({ titel: 'Wieder auf „offen“ setzen?', text: 'Nur, wenn die Rechnung noch nicht verschickt ist. Eine verschickte Rechnung wird nicht gelöscht, sondern mit einer Stornorechnung aufgehoben (Steuerberatung fragen). Die Nummer wird nicht noch einmal vergeben.', ja: 'Auf offen setzen', gefahr: true })) return;
+      D.rechnungen = D.rechnungen.filter((r) => r.id !== el.dataset.id); speichern(); zeigen(); },
     'drucken': () => window.print(),
     'lohn-csv': (el) => { const m = el.dataset.monat; const z = [['Name', 'Monat', 'Stunden', 'Stundenlohn', 'Lohn brutto', 'Minijob']];
       helfende().forEach((p) => { const l = lohnMonat(p.id, m, false); if (l.min) z.push([p.name, monatName(m), ZAHL.format(Math.round(l.min / 60 * 100) / 100), ZAHL.format(p.lohn), ZAHL.format(Math.round(l.lohn * 100) / 100), p.minijob ? 'ja' : 'nein']); });
@@ -815,7 +843,7 @@
     'laden': () => { const i = Object.assign(document.createElement('input'), { type: 'file', accept: 'application/json,.json' });
       i.onchange = () => { const f = i.files[0]; if (!f) return; f.text().then((t) => { const neu = JSON.parse(t); if (!neu || !Array.isArray(neu.kunden) || !Array.isArray(neu.einsaetze)) throw new Error('Format'); D = neu; speichern(); dialogZu(); zeigen(); meldung('Daten geladen.'); }).catch(() => meldung('Diese Datei passt nicht.')); };
       i.click(); },
-    'zuruecksetzen': () => { if (!confirm('Alle Beispieldaten neu laden? Deine Änderungen in der Vorschau gehen verloren.')) return; D = beispielDaten(); speichern(); dialogZu(); zeigen(); meldung('Beispieldaten neu geladen.'); }
+    'zuruecksetzen': async () => { if (!await fragen({ titel: 'Beispieldaten neu laden?', text: 'Deine Änderungen in der Vorschau gehen verloren.', ja: 'Neu laden', gefahr: true })) return; D = beispielDaten(); speichern(); dialogZu(); zeigen(); meldung('Beispieldaten neu geladen.'); }
   };
   document.addEventListener('click', (ev) => {
     const el = ev.target.closest('[data-a]'); if (!el) return;

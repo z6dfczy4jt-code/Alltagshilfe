@@ -301,3 +301,6 @@ dialog::backdrop { background: rgba(15, 20, 25, .45); }
 .ok-haken { display: inline-flex; vertical-align: -3px; color: var(--salbei); }
 .ok-haken .i { width: 18px; height: 18px; stroke-width: 2.4; }
 .zeile-haupt .vermerk { vertical-align: 2px; }
+.frage { max-width: 480px; }
+.frage .dialog-kopf { border-bottom: 0; padding-bottom: 0; }
+.frage .dialog-inhalt p { margin: 0 0 12px; }
