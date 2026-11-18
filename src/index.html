@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nahbei Alltagshilfe</title>
+<meta name="description" content="Einsätze planen, Stunden unterschreiben lassen, mit der Pflegekasse abrechnen: die App für eine kleine Alltagshilfe.">
+<meta name="theme-color" content="#EEF1EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111519" media="(prefers-color-scheme: dark)">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="preload" href="assets/fonts/carlito-400.woff" as="font" type="font/woff" crossorigin>
+<link rel="preload" href="assets/fonts/lora-600.woff" as="font" type="font/woff" crossorigin>
+<script>try{var a=JSON.parse(localStorage.getItem('nahbei-ansicht')||'{}');if(a.thema&&a.thema!=='auto')document.documentElement.setAttribute('data-theme',a.thema==='dunkel'?'dark':'light');if(a.schrift==='gross')document.documentElement.setAttribute('data-schrift','gross');}catch(e){}</script>
+<!--STYLES-->
+</head>
+<body>
+<a class="sr" href="#inhalt">Zum Inhalt</a>
+<header class="kopf">
+  <div class="kopf-innen">
+    <a class="marke" href="#heute" aria-label="Nahbei Alltagshilfe, zur Übersicht">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="7.6" r="5" fill="none" stroke="currentColor" stroke-width="2"/><g transform="rotate(-14 16 12.6)"><path d="M16 12l5.6 4.2v10.2a1.6 1.6 0 01-1.6 1.6h-8a1.6 1.6 0 01-1.6-1.6V16.2z" fill="var(--tinte)" stroke="var(--tinte)" stroke-width="1" stroke-linejoin="round"/><circle cx="16" cy="16.8" r="1.35" fill="var(--blatt)"/></g></svg>
+      <span><span class="marke-name" id="firmen-name">Nahbei</span><span class="marke-zusatz" id="firmen-zusatz">Alltagshilfe</span></span>
+    </a>
+    <button class="rolle-knopf" type="button" data-a="rolle-menue" aria-haspopup="dialog"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.9-3.9 3.9-6 7.5-6s6.6 2.1 7.5 6"/></svg><span id="rolle-name">Büro</span></button>
+  </div>
+</header>
+<div class="demo-band" id="demo-band" hidden><div>Vorschau mit Beispieldaten. Alles hier ist ausgedacht und bleibt nur auf diesem Gerät.</div></div>
+<main id="inhalt" tabindex="-1"></main>
+<nav class="leiste" aria-label="Bereiche"><div class="leiste-innen" id="leiste"></div></nav>
+<dialog id="dialog" aria-labelledby="dialog-titel"></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<!--SCRIPT-->
+</body>
+</html>
