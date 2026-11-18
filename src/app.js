@@ -364,7 +364,7 @@
     const rest = Math.max(0, deckung - gesamt);
     return `<div class="topf"><div class="topf-balken" role="img" aria-label="Budget ${esc(monatName(monat))}: ${euro(a.summe)} erledigt, ${euro(a.geplantSumme)} geplant, ${euro(deckung)} von der Pflegekasse verfügbar">
       <span class="topf-verbraucht" style="width:${verbr / basis * 100}%"></span><span class="topf-geplant" style="width:${gepl / basis * 100}%"></span><span class="topf-zuviel" style="width:${zuviel / basis * 100}%"></span></div>
-      <div class="topf-text"><span>${euro(a.summe)} erledigt · ${euro(a.geplantSumme)} geplant</span>
+      <div class="topf-text"><span>${euro(a.summe)} erledigt${a.geplantSumme ? ` · ${euro(a.geplantSumme)} geplant` : ''}</span>
       <span>${zuviel > 0 ? `<strong style="color:var(--rot)">${euro(zuviel)} selbst zahlen</strong>` : `noch ${euro(rest)} frei${rest >= D.firma.satz ? `, reicht für etwa ${Math.floor(rest / D.firma.satz)}\u00a0Std.` : ''}`}</span></div></div>`;
   }
   function seiteKunden() {

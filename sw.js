@@ -1,6 +1,6 @@
 /* Offline-Speicher: Die App öffnet sich auch ohne Netz (z. B. im Keller bei der Kundschaft).
    Die Seite selbst kommt zuerst aus dem Netz, nur ohne Verbindung aus dem Speicher. */
-const VERSION = 'nahbei-2026-11-18-1111';
+const VERSION = 'nahbei-2026-11-18-1113';
 const DATEIEN = ['./', './index.html', './manifest.webmanifest', './assets/icon.svg', './assets/icon-180.png', './assets/icon-192.png',
   './assets/fonts/lora-500.woff', './assets/fonts/lora-600.woff', './assets/fonts/carlito-400.woff', './assets/fonts/carlito-700.woff'];
 
