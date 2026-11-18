@@ -28,7 +28,7 @@ Oben rechts lässt sich die Ansicht wechseln: Büro oder eine der Helfenden.
 ## Veröffentlichen (GitHub Pages)
 
 Einmalig im Repo: Settings → Pages → „Deploy from a branch“ → Branch `main`, Ordner `/ (root)` → Save.
-Danach ist die App unter `https://z6dfczy4jt-code.github.io/alltagshilfe/` erreichbar.
+Danach ist die App unter `https://z6dfczy4jt-code.github.io/Alltagshilfe/` erreichbar.
 
 Nach Änderungen in `src/`:
 
